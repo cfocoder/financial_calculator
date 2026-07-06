@@ -1,0 +1,2549 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LedgerCalc — Calculadora Financiera de Lujo</title>
+  <meta name="description" content="Una calculadora financiera premium y simulador de Time Value of Money (TVM) para inversiones exclusivas.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <style>
+    /* CSS Variables & Theme Setup */
+    :root {
+      /* Palette OKLch */
+      --bg-dark: oklch(14% 0.01 250);
+      --bg-panel: oklch(18% 0.015 250);
+      --bg-calc: oklch(21% 0.008 250);
+      
+      --lcd-bg: oklch(14% 0.015 70);
+      --lcd-text: oklch(75% 0.22 75);
+      --lcd-text-dim: oklch(28% 0.06 75);
+      
+      --accent-gold: oklch(76% 0.14 85);
+      --accent-gold-hover: oklch(82% 0.12 85);
+      --accent-gold-dark: oklch(58% 0.12 85);
+      
+      --btn-bg: oklch(26% 0.008 250);
+      --btn-bg-hover: oklch(30% 0.01 250);
+      --btn-bg-active: oklch(22% 0.006 250);
+      
+      --btn-op-bg: oklch(32% 0.01 250);
+      --btn-op-bg-hover: oklch(37% 0.012 250);
+      --btn-op-bg-active: oklch(27% 0.008 250);
+
+      --btn-tvm-bg: oklch(24% 0.015 45);
+      --btn-tvm-bg-hover: oklch(28% 0.02 45);
+      --btn-tvm-bg-active: oklch(20% 0.01 45);
+
+      --btn-red: oklch(52% 0.18 35);
+      --btn-red-hover: oklch(57% 0.18 35);
+      --btn-red-active: oklch(47% 0.18 35);
+
+      --text-main: oklch(93% 0.005 250);
+      --text-muted: oklch(65% 0.01 250);
+      --border-color: oklch(28% 0.015 250);
+      
+      --font-display: 'Cinzel', Georgia, serif;
+      --font-body: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-lcd: 'Share Tech Mono', ui-monospace, monospace;
+      
+      --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.5);
+      --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+      --border-radius-btn: 6px;
+    }
+
+    /* Reset & Base Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      /* Subtle leather-like grain overlay */
+      background-image: 
+        radial-gradient(circle at 50% 30%, oklch(20% 0.015 250) 0%, var(--bg-dark) 100%),
+        radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 0);
+      background-size: 100% 100%, 4px 4px;
+    }
+
+    a {
+      color: var(--accent-gold);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: var(--accent-gold-hover);
+    }
+
+    /* Layout structure */
+    .app-container {
+      max-width: 1320px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      background: linear-gradient(135deg, var(--accent-gold), oklch(90% 0.05 95));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 0.7rem;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-decor {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .grille-lines {
+      width: 80px;
+      height: 6px;
+      background: repeating-linear-gradient(90deg, var(--border-color) 0px, var(--border-color) 4px, transparent 4px, transparent 8px);
+      opacity: 0.6;
+    }
+
+    .metallic-screw {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, oklch(45% 0.01 250), oklch(25% 0.005 250));
+      box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.1), 1px 1px 2px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    .metallic-screw::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      right: 10%;
+      height: 1px;
+      background-color: oklch(15% 0 0);
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    /* Main split-screen workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(380px, 480px) 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* Left Column: Calculator Chasis */
+    .calculator-column {
+      display: flex;
+      justify-content: center;
+    }
+
+    .calculator-chassis {
+      background: linear-gradient(145deg, oklch(24% 0.01 250), var(--bg-calc));
+      border: 1px solid oklch(30% 0.015 250);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 
+        0 15px 40px rgba(0, 0, 0, 0.7),
+        0 4px 10px rgba(0, 0, 0, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.05);
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Metallic accents on calculator outer rim */
+    .calculator-chassis::before {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      right: 3px;
+      bottom: 3px;
+      border: 1px dashed oklch(28% 0.015 250);
+      border-radius: 17px;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .calc-badge {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .model-number {
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      color: var(--accent-gold);
+    }
+
+    .precision-indicator {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* LCD Screen Container */
+    .lcd-screen-container {
+      background: oklch(10% 0.005 250);
+      border-radius: 10px;
+      padding: 2px;
+      border: 2px solid linear-gradient(180deg, oklch(35% 0.01 250), oklch(20% 0.005 250));
+      box-shadow: 
+        inset 0 3px 6px rgba(0, 0, 0, 0.8),
+        0 1px 2px rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .lcd-inner {
+      background-color: var(--lcd-bg);
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 105px;
+    }
+
+    /* Glare effect on LCD screen */
+    .lcd-glass-glare {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 60%);
+      pointer-events: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+    }
+
+    /* LCD Status Row */
+    .lcd-status-row {
+      display: flex;
+      gap: 12px;
+      font-family: var(--font-lcd);
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      height: 14px;
+    }
+
+    .lcd-indicator {
+      color: var(--lcd-text-dim);
+      transition: color 0.15s ease, text-shadow 0.15s ease;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    .lcd-indicator.active {
+      color: var(--lcd-text);
+      text-shadow: 0 0 6px rgba(245, 158, 11, 0.8);
+    }
+
+    /* LCD History / Stored Value */
+    .lcd-history-line {
+      font-family: var(--font-lcd);
+      font-size: 0.8rem;
+      color: var(--lcd-text);
+      opacity: 0.45;
+      text-align: right;
+      height: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0.5px;
+    }
+
+    /* LCD Main Display Digits */
+    .lcd-digits-line {
+      display: flex;
+      justify-content: flex-end;
+      align-items: baseline;
+      height: 40px;
+    }
+
+    .lcd-digits {
+      font-family: var(--font-lcd);
+      font-size: 2.3rem;
+      color: var(--lcd-text);
+      text-align: right;
+      letter-spacing: 1px;
+      text-shadow: 
+        0 0 4px rgba(245, 158, 11, 0.6),
+        0 0 12px rgba(245, 158, 11, 0.3);
+      transition: text-shadow 0.1s ease;
+    }
+
+    .lcd-digits.solving-glow {
+      text-shadow: 
+        0 0 10px rgba(245, 158, 11, 0.9),
+        0 0 25px rgba(245, 158, 11, 0.6);
+    }
+
+    /* Keypad grid */
+    .keypad {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .keypad-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    /* Main pad split structure */
+    .main-keys-grid {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 10px;
+    }
+
+    .number-pad {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .number-pad .keypad-row {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .operators-pad {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    /* Buttons Styling */
+    .calc-btn {
+      border: none;
+      outline: none;
+      border-radius: var(--border-radius-btn);
+      min-height: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      transition: all 0.08s ease;
+      user-select: none;
+    }
+
+    /* Key labels helper */
+    .btn-label-top {
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-gold-dark);
+      position: absolute;
+      top: 4px;
+      pointer-events: none;
+    }
+
+    .btn-label-main {
+      margin-top: 8px;
+    }
+
+    /* Numeric buttons styling */
+    .num-btn {
+      background: linear-gradient(180deg, var(--btn-bg) 0%, oklch(22% 0.008 250) 100%);
+      box-shadow: 
+        0 4px 0 oklch(15% 0.005 250),
+        0 6px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.02);
+    }
+    .num-btn:hover {
+      background: var(--btn-bg-hover);
+    }
+    .num-btn:active, .num-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(15% 0.005 250),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Operator buttons styling */
+    .operator-btn {
+      background: linear-gradient(180deg, var(--btn-op-bg) 0%, oklch(27% 0.008 250) 100%);
+      box-shadow: 
+        0 4px 0 oklch(20% 0.005 250),
+        0 6px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .operator-btn:hover {
+      background: var(--btn-op-bg-hover);
+    }
+    .operator-btn:active, .operator-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(20% 0.005 250),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* TVM buttons styling */
+    .tvm-btn {
+      background: linear-gradient(180deg, var(--btn-tvm-bg) 0%, oklch(18% 0.01 45) 100%);
+      box-shadow: 
+        0 4px 0 oklch(14% 0.01 45),
+        0 6px 10px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 12px;
+    }
+    .tvm-btn:hover {
+      background: var(--btn-tvm-bg-hover);
+    }
+    .tvm-btn:active, .tvm-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(14% 0.01 45),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    .tvm-btn .btn-label-main {
+      color: var(--accent-gold);
+    }
+
+    /* CPT button (Compute) - Gold Highlight */
+    .primary-action-btn {
+      background: linear-gradient(180deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
+      color: oklch(10% 0 0);
+      font-weight: 700;
+      box-shadow: 
+        0 4px 0 oklch(45% 0.1 85),
+        0 6px 10px rgba(245, 158, 11, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+    .primary-action-btn:hover {
+      background: var(--accent-gold-hover);
+    }
+    .primary-action-btn:active, .primary-action-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(45% 0.1 85),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* 2nd button */
+    .secondary-action-btn {
+      background: linear-gradient(180deg, oklch(35% 0.015 250) 0%, oklch(25% 0.01 250) 100%);
+      border: 1px solid var(--accent-gold-dark);
+      box-shadow: 
+        0 4px 0 oklch(15% 0.01 250),
+        0 6px 10px rgba(0, 0, 0, 0.4);
+    }
+    .secondary-action-btn:hover {
+      background: oklch(38% 0.015 250);
+    }
+    .secondary-action-btn:active, .secondary-action-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(15% 0.01 250),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    .secondary-action-btn .btn-label-main {
+      color: var(--accent-gold);
+    }
+
+    /* Utilities (STO, RCL, %, 1/x etc) */
+    .utility-btn {
+      background: linear-gradient(180deg, var(--btn-bg) 0%, oklch(22% 0.008 250) 100%);
+      box-shadow: 
+        0 4px 0 oklch(15% 0.005 250),
+        0 6px 10px rgba(0, 0, 0, 0.4);
+      font-size: 0.85rem;
+    }
+    .utility-btn:hover {
+      background: var(--btn-bg-hover);
+    }
+    .utility-btn:active, .utility-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(15% 0.005 250),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Clear and DEL buttons (red) */
+    .clear-btn {
+      background: linear-gradient(180deg, var(--btn-red) 0%, oklch(42% 0.15 35) 100%);
+      box-shadow: 
+        0 4px 0 oklch(32% 0.1 35),
+        0 6px 10px rgba(0, 0, 0, 0.4);
+    }
+    .clear-btn:hover {
+      background: var(--btn-red-hover);
+    }
+    .clear-btn:active, .clear-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(32% 0.1 35),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Equals Key - double height */
+    .equals-btn {
+      background: linear-gradient(180deg, var(--accent-gold) 0%, var(--accent-gold-dark) 100%);
+      color: oklch(10% 0 0);
+      grid-row: span 2;
+      min-height: 108px;
+      box-shadow: 
+        0 4px 0 oklch(45% 0.1 85),
+        0 6px 12px rgba(245, 158, 11, 0.15);
+    }
+    .equals-btn:hover {
+      background: var(--accent-gold-hover);
+    }
+    .equals-btn:active, .equals-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 oklch(45% 0.1 85),
+        0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Chassis Footer */
+    .chassis-footer {
+      text-align: center;
+      margin-top: 8px;
+    }
+    
+    .engraving {
+      font-size: 0.58rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    /* Right Column: Dashboard & Assumptions */
+    .dashboard-column {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .dashboard-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 610px;
+    }
+
+    .dashboard-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      scrollbar-width: none; /* Hide scrollbar Firefox */
+    }
+    .dashboard-tabs::-webkit-scrollbar {
+      display: none; /* Hide scrollbar Chrome/Safari */
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: var(--text-main);
+      background-color: oklch(22% 0.015 250);
+    }
+    .tab-btn.active {
+      color: var(--accent-gold);
+      background-color: oklch(24% 0.02 250);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      flex-grow: 1;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .tab-content.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .accent-dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-gold);
+      box-shadow: 0 0 8px var(--accent-gold);
+    }
+
+    .section-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    /* Stored TVM Registers View */
+    .register-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .register-row {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      align-items: center;
+      padding: 12px 16px;
+      background-color: oklch(16% 0.01 250);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      transition: background-color 0.4s ease;
+    }
+
+    .reg-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .reg-code {
+      font-family: var(--font-lcd);
+      font-weight: 700;
+      color: var(--accent-gold);
+      font-size: 1.05rem;
+    }
+
+    .reg-name {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .reg-value-container {
+      display: flex;
+      align-items: center;
+      background: oklch(12% 0.005 250);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px 8px;
+      gap: 6px;
+      position: relative;
+    }
+
+    .reg-input {
+      background: none;
+      border: none;
+      color: var(--text-main);
+      font-family: var(--font-lcd);
+      font-size: 1.1rem;
+      text-align: right;
+      width: 100%;
+      outline: none;
+    }
+    /* Remove input spinners */
+    .reg-input::-webkit-outer-spin-button,
+    .reg-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .reg-input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    .currency-symbol, .percentage-symbol {
+      font-family: var(--font-lcd);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .reg-solve-btn {
+      background-color: oklch(25% 0.02 250);
+      color: var(--accent-gold);
+      border: 1px solid oklch(35% 0.02 250);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .reg-solve-btn:hover {
+      background-color: var(--accent-gold);
+      color: oklch(10% 0 0);
+      border-color: var(--accent-gold);
+    }
+
+    .timing-selector {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding: 12px 16px;
+      background-color: oklch(16% 0.01 250);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+    }
+
+    .timing-label {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .timing-options {
+      display: flex;
+      gap: 8px;
+    }
+
+    .timing-btn {
+      background: oklch(22% 0.01 250);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .timing-btn:hover {
+      color: var(--text-main);
+    }
+    .timing-btn.active {
+      color: oklch(10% 0 0);
+      background-color: var(--accent-gold);
+      border-color: var(--accent-gold);
+    }
+
+    .dashboard-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: auto;
+      padding-top: 12px;
+    }
+
+    .danger-outline-btn {
+      background: none;
+      color: var(--btn-red);
+      border: 1px solid var(--btn-red);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .danger-outline-btn:hover {
+      background-color: var(--btn-red);
+      color: var(--text-main);
+    }
+
+    /* Scenarios list */
+    .scenarios-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      overflow-y: auto;
+      max-height: 480px;
+      padding-right: 4px;
+    }
+    .scenarios-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scenarios-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scenarios-list::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .scenario-card {
+      background-color: oklch(16% 0.01 250);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .scenario-card:hover {
+      border-color: var(--accent-gold);
+      background-color: oklch(19% 0.015 250);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .scenario-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .scenario-header h3 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .tag {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: oklch(24% 0.02 250);
+      color: var(--accent-gold);
+      border: 1px solid var(--border-color);
+    }
+
+    .scenario-text {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .scenario-specs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 8px;
+      font-family: var(--font-lcd);
+      font-size: 0.72rem;
+      background-color: oklch(12% 0.005 250);
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid oklch(19% 0.01 250);
+      color: var(--lcd-text);
+      opacity: 0.8;
+    }
+
+    .scenario-action-prompt {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent-gold-dark);
+      text-align: right;
+      margin-top: auto;
+      transition: color 0.2s ease;
+    }
+    .scenario-card:hover .scenario-action-prompt {
+      color: var(--accent-gold);
+    }
+
+    /* Paper Tape View */
+    .tape-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .clear-tape-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+    }
+    .clear-tape-btn:hover {
+      color: var(--btn-red);
+    }
+
+    .paper-tape-container {
+      background-color: oklch(12% 0.005 250);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      height: 400px;
+      position: relative;
+    }
+
+    .paper-tape {
+      flex-grow: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 8px;
+      padding-bottom: 24px;
+      /* Receipts-like layout */
+      clip-path: polygon(
+        0% 0%, 2.5% 3px, 5% 0%, 7.5% 3px, 10% 0%, 12.5% 3px, 15% 0%, 17.5% 3px, 20% 0%, 22.5% 3px, 25% 0%, 27.5% 3px, 30% 0%, 32.5% 3px, 35% 0%, 37.5% 3px, 40% 0%, 42.5% 3px, 45% 0%, 47.5% 3px, 50% 0%, 52.5% 3px, 55% 0%, 57.5% 3px, 60% 0%, 62.5% 3px, 65% 0%, 67.5% 3px, 70% 0%, 72.5% 3px, 75% 0%, 77.5% 3px, 80% 0%, 82.5% 3px, 85% 0%, 87.5% 3px, 90% 0%, 92.5% 3px, 95% 0%, 97.5% 3px, 100% 0%, 
+        100% 100%, 0% 100%
+      );
+      background: 
+        repeating-linear-gradient(rgba(0,0,0,0) 0px, rgba(0,0,0,0) 27px, rgba(255, 255, 255, 0.01) 27px, rgba(255, 255, 255, 0.01) 28px),
+        oklch(15% 0.01 250);
+      padding-top: 16px;
+      border-radius: 4px;
+    }
+    .paper-tape::-webkit-scrollbar {
+      width: 4px;
+    }
+    .paper-tape::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .paper-tape::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 2px;
+    }
+
+    .tape-item {
+      font-family: var(--font-lcd);
+      font-size: 0.85rem;
+      color: oklch(75% 0.15 150); /* Matrix glowing green for tape */
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 12px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    .tape-item.headline {
+      color: var(--accent-gold);
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 6px;
+      margin-bottom: 4px;
+    }
+    .tape-item.calc-result {
+      font-weight: 700;
+      color: oklch(78% 0.18 75); /* Amber glow for outputs on tape */
+      border-top: 1px solid var(--border-color);
+      padding-top: 4px;
+      margin-top: 2px;
+    }
+
+    .font-mono {
+      font-family: var(--font-lcd) !important;
+    }
+    .text-center {
+      justify-content: center;
+      opacity: 0.5;
+    }
+
+    /* Math Guide View */
+    .math-guide-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      max-height: 480px;
+      padding-right: 4px;
+    }
+    .math-guide-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .math-guide-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .math-guide-container::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 3px;
+    }
+
+    .formula-card {
+      background-color: oklch(16% 0.01 250);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .formula-title {
+      font-weight: 600;
+      color: var(--accent-gold);
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .formula-math {
+      background-color: oklch(12% 0.005 250);
+      padding: 16px;
+      border-radius: 8px;
+      font-family: var(--font-lcd);
+      font-size: 0.92rem;
+      color: var(--text-main);
+      overflow-x: auto;
+      text-align: center;
+      border: 1px solid oklch(19% 0.01 250);
+      line-height: 1.6;
+    }
+
+    .formula-note {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      border-left: 2px solid var(--accent-gold);
+      padding-left: 10px;
+    }
+
+    .variable-guide {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .var-guide-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      padding-bottom: 12px;
+      border-bottom: 1px solid oklch(22% 0.01 250);
+    }
+    .var-guide-item:last-child {
+      border-bottom: none;
+    }
+
+    .var-pill {
+      background-color: oklch(24% 0.02 250);
+      color: var(--accent-gold);
+      border: 1px solid var(--border-color);
+      font-family: var(--font-lcd);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      min-width: 42px;
+      text-align: center;
+    }
+
+    /* Footer */
+    .app-footer {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Keyboard Instructions Modal/Trigger */
+    .keyboard-shortcuts-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: help;
+      position: relative;
+    }
+    .keyboard-shortcuts-info:hover .shortcuts-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .shortcuts-tooltip {
+      position: absolute;
+      bottom: 25px;
+      right: 0;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-soft);
+      border-radius: 8px;
+      padding: 12px;
+      width: 260px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(5px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      border-bottom: 1px solid oklch(22% 0.01 250);
+      padding-bottom: 4px;
+    }
+    .tooltip-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .kbd-key {
+      background-color: oklch(22% 0.01 250);
+      border: 1px solid var(--border-color);
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: var(--font-lcd);
+      font-size: 0.65rem;
+      color: var(--accent-gold);
+    }
+
+    /* Mobile Quick-Tabs bar */
+    .mobile-nav-bar {
+      display: none;
+      background-color: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 60px;
+      grid-template-columns: 1fr 1fr;
+      box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+    }
+
+    .mobile-nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .mobile-nav-btn.active {
+      color: var(--accent-gold);
+    }
+    .mobile-nav-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Success indicator animations */
+    @keyframes register-flash {
+      0% { background-color: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.5); }
+      100% { background-color: oklch(16% 0.01 250); border-color: var(--border-color); }
+    }
+    .flash-updated {
+      animation: register-flash 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Responsive Adapters */
+    @media (max-width: 900px) {
+      .app-container {
+        padding: 16px;
+        padding-bottom: 80px; /* Space for mobile nav */
+      }
+      .workspace {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .calculator-column, .dashboard-column {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      /* We toggle display based on mobile active state */
+      .calculator-column {
+        display: flex;
+      }
+      .dashboard-column {
+        display: none;
+      }
+      .workspace.show-dashboard .calculator-column {
+        display: none;
+      }
+      .workspace.show-dashboard .dashboard-column {
+        display: flex;
+      }
+      .mobile-nav-bar {
+        display: grid;
+      }
+      .scenarios-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .calculator-chassis {
+        padding: 16px;
+        gap: 16px;
+      }
+      .lcd-inner {
+        padding: 12px 14px;
+        min-height: 95px;
+      }
+      .lcd-digits {
+        font-size: 2rem;
+      }
+      .calc-btn {
+        min-height: 44px;
+        font-size: 0.85rem;
+      }
+      .btn-label-top {
+        font-size: 0.5rem;
+        top: 2px;
+      }
+      .equals-btn {
+        min-height: 100px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-title" data-od-id="brand-title">LEDGERCALC</span>
+        <span class="brand-subtitle" data-od-id="brand-subtitle">PRO FINANCIAL SYSTEM</span>
+      </div>
+      <div class="header-decor">
+        <div class="grille-lines"></div>
+        <div class="metallic-screw"></div>
+        <div class="grille-lines"></div>
+      </div>
+    </header>
+
+    <div class="workspace" id="app-workspace">
+      <!-- Left Column: Calculator -->
+      <section class="calculator-column">
+        <div class="calculator-chassis" data-od-id="calculator-chassis">
+          <div class="calc-badge">
+            <span class="model-number">LC-12B</span>
+            <span class="precision-indicator">PREMIUM COMPILER</span>
+          </div>
+
+          <!-- LCD Screen -->
+          <div class="lcd-screen-container" data-od-id="lcd-screen">
+            <div class="lcd-inner">
+              <div class="lcd-glass-glare"></div>
+              
+              <!-- Screen indicators -->
+              <div class="lcd-status-row">
+                <span id="ind-cpt" class="lcd-indicator">CPT</span>
+                <span id="ind-2nd" class="lcd-indicator">2ND</span>
+                <span id="ind-bgn" class="lcd-indicator">BGN</span>
+                <span id="ind-end" class="lcd-indicator active">END</span>
+                <span id="ind-sto" class="lcd-indicator">STO</span>
+                <span id="ind-rcl" class="lcd-indicator">RCL</span>
+              </div>
+              
+              <!-- Stored Register context / formula line -->
+              <div class="lcd-history-line" id="lcd-history">READY</div>
+              
+              <!-- Primary digits display -->
+              <div class="lcd-digits-line">
+                <span class="lcd-digits" id="lcd-main-display">0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tactile Keypad -->
+          <div class="keypad" data-od-id="keypad">
+            
+            <!-- Row 1: TVM Worksheet controls -->
+            <div class="keypad-row">
+              <button class="calc-btn tvm-btn" data-key="N" aria-label="N: Número de períodos" data-od-id="btn-n">
+                <span class="btn-label-top">n</span>
+                <span class="btn-label-main">N</span>
+              </button>
+              <button class="calc-btn tvm-btn" data-key="I/Y" aria-label="I/Y: Tasa de interés por período" data-od-id="btn-i">
+                <span class="btn-label-top">i/y</span>
+                <span class="btn-label-main">I/Y</span>
+              </button>
+              <button class="calc-btn tvm-btn" data-key="PV" aria-label="PV: Valor Presente" data-od-id="btn-pv">
+                <span class="btn-label-top">pv</span>
+                <span class="btn-label-main">PV</span>
+              </button>
+              <button class="calc-btn tvm-btn" data-key="PMT" aria-label="PMT: Pago periódico" data-od-id="btn-pmt">
+                <span class="btn-label-top">pmt</span>
+                <span class="btn-label-main">PMT</span>
+              </button>
+              <button class="calc-btn tvm-btn" data-key="FV" aria-label="FV: Valor Futuro" data-od-id="btn-fv">
+                <span class="btn-label-top">fv</span>
+                <span class="btn-label-main">FV</span>
+              </button>
+            </div>
+
+            <!-- Row 2: Solving and Special triggers -->
+            <div class="keypad-row">
+              <button class="calc-btn primary-action-btn" data-key="CPT" aria-label="CPT: Calcular registro financiero" data-od-id="btn-cpt">
+                <span class="btn-label-main">CPT</span>
+              </button>
+              <button class="calc-btn secondary-action-btn" data-key="2nd" aria-label="2nd: Acceder a segunda función" data-od-id="btn-2nd">
+                <span class="btn-label-main">2nd</span>
+              </button>
+              <button class="calc-btn utility-btn" data-key="BGN" aria-label="BGN: Cambiar inicio/fin de pagos" data-od-id="btn-bgn">
+                <span class="btn-label-top">bgn/end</span>
+                <span class="btn-label-main">BGN</span>
+              </button>
+              <button class="calc-btn utility-btn" data-key="STO" aria-label="STO: Guardar valor" data-od-id="btn-sto">
+                <span class="btn-label-main">STO</span>
+              </button>
+              <button class="calc-btn utility-btn" data-key="RCL" aria-label="RCL: Recuperar valor" data-od-id="btn-rcl">
+                <span class="btn-label-main">RCL</span>
+              </button>
+            </div>
+
+            <!-- Row 3: Math functions and Clear triggers -->
+            <div class="keypad-row">
+              <button class="calc-btn utility-btn" data-key="%" aria-label="Porcentaje" data-od-id="btn-pct">%</button>
+              <button class="calc-btn utility-btn" data-key="SQRT" aria-label="Raíz cuadrada" data-od-id="btn-sqrt">√x</button>
+              <button class="calc-btn utility-btn" data-key="1/X" aria-label="Inverso" data-od-id="btn-inv">1/x</button>
+              <button class="calc-btn clear-btn" data-key="DEL" aria-label="Borrar último dígito" data-od-id="btn-del">DEL</button>
+              <button class="calc-btn clear-btn" data-key="C" aria-label="Limpiar entrada actual o calculadora" data-od-id="btn-clear">C/CE</button>
+            </div>
+
+            <!-- Main grid containing numbers and operators -->
+            <div class="main-keys-grid">
+              <div class="number-pad">
+                <div class="keypad-row">
+                  <button class="calc-btn num-btn" data-key="7" data-od-id="btn-7">7</button>
+                  <button class="calc-btn num-btn" data-key="8" data-od-id="btn-8">8</button>
+                  <button class="calc-btn num-btn" data-key="9" data-od-id="btn-9">9</button>
+                </div>
+                <div class="keypad-row">
+                  <button class="calc-btn num-btn" data-key="4" data-od-id="btn-4">4</button>
+                  <button class="calc-btn num-btn" data-key="5" data-od-id="btn-5">5</button>
+                  <button class="calc-btn num-btn" data-key="6" data-od-id="btn-6">6</button>
+                </div>
+                <div class="keypad-row">
+                  <button class="calc-btn num-btn" data-key="1" data-od-id="btn-1">1</button>
+                  <button class="calc-btn num-btn" data-key="2" data-od-id="btn-2">2</button>
+                  <button class="calc-btn num-btn" data-key="3" data-od-id="btn-3">3</button>
+                </div>
+                <div class="keypad-row">
+                  <button class="calc-btn num-btn" data-key="0" data-od-id="btn-0">0</button>
+                  <button class="calc-btn num-btn" data-key="." data-od-id="btn-dot">.</button>
+                  <button class="calc-btn num-btn" data-key="+/-" aria-label="Cambiar signo" data-od-id="btn-sign">+/-</button>
+                </div>
+              </div>
+              <div class="operators-pad">
+                <button class="calc-btn operator-btn" data-key="/" aria-label="Dividir" data-od-id="btn-div">÷</button>
+                <button class="calc-btn operator-btn" data-key="*" aria-label="Multiplicar" data-od-id="btn-mul">×</button>
+                <button class="calc-btn operator-btn" data-key="-" aria-label="Restar" data-od-id="btn-sub">−</button>
+                <button class="calc-btn operator-btn" data-key="+" aria-label="Sumar" data-od-id="btn-add">+</button>
+                <button class="calc-btn equals-btn" data-key="=" aria-label="Calcular resultado" data-od-id="btn-eq">=</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="chassis-footer">
+            <div class="engraving">PROFESSIONAL TIME VALUE COMPILER</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Interactive panels & information -->
+      <section class="dashboard-column">
+        <div class="dashboard-card" data-od-id="dashboard-card">
+          <!-- Navigation Tabs -->
+          <nav class="dashboard-tabs">
+            <button class="tab-btn active" data-tab="worksheet" data-od-id="tab-btn-worksheet">Worksheet</button>
+            <button class="tab-btn" data-tab="scenarios" data-od-id="tab-btn-scenarios">Escenarios</button>
+            <button class="tab-btn" data-tab="tape" data-od-id="tab-btn-tape">Cinta de Auditoría</button>
+            <button class="tab-btn" data-tab="math" data-od-id="tab-btn-math">Guía Matemática</button>
+          </nav>
+
+          <!-- Tab Content: Stored Registers -->
+          <div class="tab-content active" id="tab-worksheet">
+            <h2 class="section-title"><i class="accent-dot"></i> Registros Guardados en Memoria</h2>
+            <p class="section-desc">Visualiza y edita los valores del worksheet en tiempo real. Utiliza los botones "Solve" para calcular el valor de esa variable basándose en las demás.</p>
+
+            <div class="register-grid">
+              <!-- N -->
+              <div class="register-row" id="reg-row-n" data-od-id="reg-n-container">
+                <div class="reg-label">
+                  <span class="reg-code">N</span>
+                  <span class="reg-name">Número de períodos</span>
+                </div>
+                <div class="reg-value-container">
+                  <input type="number" class="reg-input" id="reg-val-n" value="0.00" step="any">
+                  <button class="reg-solve-btn" onclick="solveRegisterFromDashboard('N')" title="Resolver para N">Solve</button>
+                </div>
+              </div>
+
+              <!-- I/Y -->
+              <div class="register-row" id="reg-row-i" data-od-id="reg-i-container">
+                <div class="reg-label">
+                  <span class="reg-code">I/Y</span>
+                  <span class="reg-name">Tasa de interés por período</span>
+                </div>
+                <div class="reg-value-container">
+                  <input type="number" class="reg-input" id="reg-val-i" value="0.00" step="any">
+                  <span class="percentage-symbol">%</span>
+                  <button class="reg-solve-btn" onclick="solveRegisterFromDashboard('IY')" title="Resolver para Interés">Solve</button>
+                </div>
+              </div>
+
+              <!-- PV -->
+              <div class="register-row" id="reg-row-pv" data-od-id="reg-pv-container">
+                <div class="reg-label">
+                  <span class="reg-code">PV</span>
+                  <span class="reg-name">Valor Presente</span>
+                </div>
+                <div class="reg-value-container">
+                  <span class="currency-symbol">$</span>
+                  <input type="number" class="reg-input" id="reg-val-pv" value="0.00" step="any">
+                  <button class="reg-solve-btn" onclick="solveRegisterFromDashboard('PV')" title="Resolver para PV">Solve</button>
+                </div>
+              </div>
+
+              <!-- PMT -->
+              <div class="register-row" id="reg-row-pmt" data-od-id="reg-pmt-container">
+                <div class="reg-label">
+                  <span class="reg-code">PMT</span>
+                  <span class="reg-name">Pago Periódico (Anualidad)</span>
+                </div>
+                <div class="reg-value-container">
+                  <span class="currency-symbol">$</span>
+                  <input type="number" class="reg-input" id="reg-val-pmt" value="0.00" step="any">
+                  <button class="reg-solve-btn" onclick="solveRegisterFromDashboard('PMT')" title="Resolver para Pago">Solve</button>
+                </div>
+              </div>
+
+              <!-- FV -->
+              <div class="register-row" id="reg-row-fv" data-od-id="reg-fv-container">
+                <div class="reg-label">
+                  <span class="reg-code">FV</span>
+                  <span class="reg-name">Valor Futuro</span>
+                </div>
+                <div class="reg-value-container">
+                  <span class="currency-symbol">$</span>
+                  <input type="number" class="reg-input" id="reg-val-fv" value="0.00" step="any">
+                  <button class="reg-solve-btn" onclick="solveRegisterFromDashboard('FV')" title="Resolver para FV">Solve</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Timing toggle -->
+            <div class="timing-selector">
+              <span class="timing-label">Frecuencia de Pagos:</span>
+              <div class="timing-options">
+                <button class="timing-btn active" id="btn-timing-end" onclick="setPaymentTiming(false)">END (Vencido)</button>
+                <button class="timing-btn" id="btn-timing-bgn" onclick="setPaymentTiming(true)">BGN (Anticipado)</button>
+              </div>
+            </div>
+
+            <div class="dashboard-actions">
+              <button class="danger-outline-btn" onclick="resetCalculatorMemory()">Resetear Registros</button>
+            </div>
+          </div>
+
+          <!-- Tab Content: Financial Scenarios -->
+          <div class="tab-content" id="tab-scenarios">
+            <h2 class="section-title"><i class="accent-dot"></i> Escenarios Financieros Reales</h2>
+            <p class="section-desc">Carga plantillas con parámetros preconfigurados e inspirados en proyectos reales para resolver operaciones directamente.</p>
+
+            <div class="scenarios-list">
+              <!-- Eco-Luxury Villa -->
+              <div class="scenario-card" onclick="loadSelectedScenario('villa')" data-od-id="card-scenario-villa">
+                <div class="scenario-header">
+                  <h3>🌲 Villa de Lujo en Sierra Madre</h3>
+                  <span class="tag">Hipoteca</span>
+                </div>
+                <p class="scenario-text">Calcula el pago mensual (PMT) para adquirir una residencia eco-luxury en la selva. Valor: $1,250,000 USD, con un enganche de 20% (financiando $1,000,000 USD a tasa del 6.6% anual por 30 años).</p>
+                <div class="scenario-specs">
+                  <span>PV: -1,000,000</span>
+                  <span>N: 360 (meses)</span>
+                  <span>I/Y: 0.55% (mensual)</span>
+                  <span>FV: 0</span>
+                </div>
+                <div class="scenario-action-prompt">Hacer clic para cargar y calcular PMT</div>
+              </div>
+
+              <!-- Compound Trust fund -->
+              <div class="scenario-card" onclick="loadSelectedScenario('compound')" data-od-id="card-scenario-compound">
+                <div class="scenario-header">
+                  <h3>📈 Fideicomiso Soberano</h3>
+                  <span class="tag">Inversión</span>
+                </div>
+                <p class="scenario-text">Calcula el Valor Futuro (FV) de una inversión inicial de $500,000 USD en un portafolio de alto rendimiento, compuesto anualmente al 5.75% por un plazo de 15 años sin aportes adicionales.</p>
+                <div class="scenario-specs">
+                  <span>PV: -500,000</span>
+                  <span>N: 15 (años)</span>
+                  <span>I/Y: 5.75% (anual)</span>
+                  <span>PMT: 0</span>
+                </div>
+                <div class="scenario-action-prompt">Hacer clic para cargar y calcular FV</div>
+              </div>
+
+              <!-- Retirement Fund -->
+              <div class="scenario-card" onclick="loadSelectedScenario('retirement')" data-od-id="card-scenario-retirement">
+                <div class="scenario-header">
+                  <h3>💼 Fondo de Retiro Elite</h3>
+                  <span class="tag">Planificación</span>
+                </div>
+                <p class="scenario-text">Calcula el aporte mensual requerido (PMT) para alcanzar un capital neto de $3,000,000 USD en 25 años, partiendo de un capital inicial de $150,000 USD al 7.2% anual.</p>
+                <div class="scenario-specs">
+                  <span>PV: -150,000</span>
+                  <span>FV: 3,000,000</span>
+                  <span>N: 300 (meses)</span>
+                  <span>I/Y: 0.60% (mensual)</span>
+                </div>
+                <div class="scenario-action-prompt">Hacer clic para cargar y calcular PMT</div>
+              </div>
+
+              <!-- VC IRR -->
+              <div class="scenario-card" onclick="loadSelectedScenario('venture')" data-od-id="card-scenario-venture">
+                <div class="scenario-header">
+                  <h3>🚀 Rendimiento Venture Capital</h3>
+                  <span class="tag">Capital Privado</span>
+                </div>
+                <p class="scenario-text">Calcula la tasa interna de retorno anualizada (I/Y) de una inversión en etapa semilla de $400,000 USD que genera una salida (exit) de $2,500,000 USD al cabo de 7 años.</p>
+                <div class="scenario-specs">
+                  <span>PV: -400,000</span>
+                  <span>FV: 2,500,000</span>
+                  <span>N: 7 (años)</span>
+                  <span>PMT: 0</span>
+                </div>
+                <div class="scenario-action-prompt">Hacer clic para cargar y calcular I/Y</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content: Auditorial paper tape -->
+          <div class="tab-content" id="tab-tape">
+            <div class="tape-header">
+              <h2 class="section-title"><i class="accent-dot"></i> Cinta de Auditoría Digital</h2>
+              <button class="clear-tape-btn" onclick="clearAuditorTape()" data-od-id="btn-clear-tape">Limpiar Registro</button>
+            </div>
+            <p class="section-desc">Muestra un historial completo de las operaciones aritméticas e ingresos de registros financieros, simulando las impresoras clásicas.</p>
+            
+            <div class="paper-tape-container">
+              <div class="paper-tape" id="tape-content">
+                <div class="tape-item font-mono text-center">*** LEDGERCALC INICIADO ***</div>
+                <div class="tape-item font-mono text-center">MODO DE PAGOS: VENCIDO</div>
+                <div class="tape-item font-mono text-center">-------------------------</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Content: Math Explanation -->
+          <div class="tab-content" id="tab-math">
+            <h2 class="section-title"><i class="accent-dot"></i> Fórmulas de Valor del Dinero (TVM)</h2>
+            <p class="section-desc">El motor financiero LedgerCalc resuelve variables basándose en la ecuación actuarial de flujos de caja.</p>
+
+            <div class="math-guide-container">
+              <div class="formula-card">
+                <div class="formula-title">Ecuación General de Equivalencia</div>
+                <div class="formula-math">
+                  PV + PMT &times; [ (1 - (1+i)<sup>-N</sup>) / i ] &times; (1 + i &times; Type) + FV &times; (1+i)<sup>-N</sup> = 0
+                </div>
+                <div class="formula-note">
+                  <strong>Convención de Signos Obligatoria:</strong> 
+                  El flujo que ingresa (préstamo recibido, retorno de inversión) es positivo (+). El flujo que sale (enganche, inversión inicial, pagos mensuales realizados) se registra como negativo (-).
+                </div>
+              </div>
+
+              <div class="variable-guide">
+                <div class="var-guide-item">
+                  <span class="var-pill">N</span>
+                  <div>
+                    <strong>Número de períodos:</strong> Plazo total del flujo. Si pagas mensualmente por 30 años, N = 30 &times; 12 = 360 meses.
+                  </div>
+                </div>
+                <div class="var-guide-item">
+                  <span class="var-pill">I/Y</span>
+                  <div>
+                    <strong>Tasa de interés periódica:</strong> Representa la tasa efectiva del período. Para tasas anuales con capitalización mensual, debes dividir la tasa anual entre 12 antes de guardarla.
+                  </div>
+                </div>
+                <div class="var-guide-item">
+                  <span class="var-pill">PV</span>
+                  <div>
+                    <strong>Valor Presente (Capital Inicial):</strong> La inversión inicial o el monto del préstamo en el momento cero.
+                  </div>
+                </div>
+                <div class="var-guide-item">
+                  <span class="var-pill">PMT</span>
+                  <div>
+                    <strong>Anualidad / Pago periódico:</strong> Depósito o cuota constante en cada período. Se asume en 0 para flujos únicos compounding.
+                  </div>
+                </div>
+                <div class="var-guide-item">
+                  <span class="var-pill">FV</span>
+                  <div>
+                    <strong>Valor Futuro:</strong> El saldo residual al finalizar el período de análisis. Para una hipoteca saldada, FV = 0.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="app-footer">
+      <div>LedgerCalc LC-12B • Original Premium Edition</div>
+      
+      <!-- Interactive help triggers -->
+      <div class="keyboard-shortcuts-info" data-od-id="shortcuts-trigger">
+        <span>Teclas de Acceso Rápido 🛈</span>
+        <div class="shortcuts-tooltip">
+          <div class="tooltip-row"><span>Números / Operadores</span><span class="kbd-key">0-9 . + - * / =</span></div>
+          <div class="tooltip-row"><span>Guardar en N</span><span class="kbd-key">N</span></div>
+          <div class="tooltip-row"><span>Guardar en I/Y</span><span class="kbd-key">I</span></div>
+          <div class="tooltip-row"><span>Guardar en PV</span><span class="kbd-key">P</span></div>
+          <div class="tooltip-row"><span>Guardar en PMT</span><span class="kbd-key">M</span></div>
+          <div class="tooltip-row"><span>Guardar en FV</span><span class="kbd-key">F</span></div>
+          <div class="tooltip-row"><span>Calcular (CPT)</span><span class="kbd-key">C</span></div>
+          <div class="tooltip-row"><span>Segunda Función</span><span class="kbd-key">S</span></div>
+          <div class="tooltip-row"><span>Borrar Entrada</span><span class="kbd-key">C / Esc</span></div>
+          <div class="tooltip-row"><span>Retroceso (DEL)</span><span class="kbd-key">Backspace</span></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Mobile navigation tabs bar -->
+  <nav class="mobile-nav-bar" id="mobile-navigation-bar">
+    <button class="mobile-nav-btn active" id="m-btn-calc" onclick="toggleMobileView(false)">
+      <svg viewBox="0 0 24 24"><path d="M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M19,19H5V5h14V19z M7,17h2v2H7V17z M7,13h2v2H7V13z M7,9h2v2H7V9z M11,17h2v2h-2V17z M11,13h2v2h-2V13z M11,9h2v2h-2V9z M15,17h2v2h-2V17z M15,13h2v2h-2V13z M15,9h2v2h-2V9z"/></svg>
+      <span>Calculadora</span>
+    </button>
+    <button class="mobile-nav-btn" id="m-btn-dash" onclick="toggleMobileView(true)">
+      <svg viewBox="0 0 24 24"><path d="M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M9,17H7v-7h2V17z M13,17h-2V7h2V17z M17,17h-2v-4h2V17z"/></svg>
+      <span>Worksheet</span>
+    </button>
+  </nav>
+
+  <script>
+    /* ----------------------------------------------------
+       State Management for LedgerCalc LC-12B
+       ---------------------------------------------------- */
+    let currentInput = "";           // The digits string currently being typed
+    let displayValue = "0.00";       // Display string currently showing on screen
+    let storedOperand = null;        // For basic arithmetic chains
+    let pendingOperator = null;      // Active arithmetic operator (+, -, *, /)
+    
+    // Status indicators
+    let cptMode = false;             // Activated when CPT is pressed
+    let secondFunctionMode = false;   // Activated when 2nd function key is pressed
+    let stoMode = false;             // Activated when STO is pressed
+    let rclMode = false;             // Activated when RCL is pressed
+    
+    // TVM registers
+    let tvmN = 0.00;
+    let tvmI = 0.00;
+    let tvmPV = 0.00;
+    let tvmPMT = 0.00;
+    let tvmFV = 0.00;
+    let tvmBgn = false;              // false: END, true: BGN
+
+    // Display flag
+    let resetDisplayOnNextKey = false;
+
+    // Helper to format values for display/tape
+    function formatNumber(val, decimals = 2) {
+      if (isNaN(val) || !isFinite(val)) return "Error";
+      
+      // Dynamic scaling for tiny rates or massive metrics
+      let result = parseFloat(val).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: Math.max(decimals, 4)
+      });
+      return result;
+    }
+
+    // Refresh calculator screen UI
+    function updateLcdDisplay() {
+      const displayElem = document.getElementById('lcd-main-display');
+      
+      // Update primary numeric display
+      displayElem.textContent = displayValue;
+
+      // Update light up status indicators on screen
+      document.getElementById('ind-cpt').classList.toggle('active', cptMode);
+      document.getElementById('ind-2nd').classList.toggle('active', secondFunctionMode);
+      document.getElementById('ind-sto').classList.toggle('active', stoMode);
+      document.getElementById('ind-rcl').classList.toggle('active', rclMode);
+      document.getElementById('ind-bgn').classList.toggle('active', tvmBgn);
+      document.getElementById('ind-end').classList.toggle('active', !tvmBgn);
+
+      // Sync register inputs on the dashboard
+      document.getElementById('reg-val-n').value = tvmN ? tvmN : 0;
+      document.getElementById('reg-val-i').value = tvmI ? tvmI : 0;
+      document.getElementById('reg-val-pv').value = tvmPV ? tvmPV : 0;
+      document.getElementById('reg-val-pmt').value = tvmPMT ? tvmPMT : 0;
+      document.getElementById('reg-val-fv').value = tvmFV ? tvmFV : 0;
+
+      // Sync active state indicators on timing buttons
+      document.getElementById('btn-timing-bgn').classList.toggle('active', tvmBgn);
+      document.getElementById('btn-timing-end').classList.toggle('active', !tvmBgn);
+    }
+
+    // Write calculations to digital paper tape
+    function appendToTape(label, valStr, isOutput = false) {
+      const tape = document.getElementById('tape-content');
+      const item = document.createElement('div');
+      
+      item.className = 'tape-item font-mono';
+      if (isOutput) item.className += ' calc-result';
+      
+      const cleanLabel = label.padEnd(16, '.');
+      item.innerHTML = `<span>${cleanLabel}</span><span>${valStr}</span>`;
+      
+      tape.appendChild(item);
+      // Auto scroll paper tape
+      tape.scrollTop = tape.scrollHeight;
+    }
+
+    // Visual notification/updated flash in Stored Registers
+    function flashRegisterRow(regName) {
+      const rowIdMap = {
+        'N': 'reg-row-n',
+        'IY': 'reg-row-i',
+        'PV': 'reg-row-pv',
+        'PMT': 'reg-row-pmt',
+        'FV': 'reg-row-fv'
+      };
+      const element = document.getElementById(rowIdMap[regName]);
+      if (element) {
+        element.classList.remove('flash-updated');
+        void element.offsetWidth; // Trigger reflow to restart animation
+        element.classList.add('flash-updated');
+      }
+    }
+
+    /* ----------------------------------------------------
+       Time Value of Money Core Mathematical Engine
+       ---------------------------------------------------- */
+    function computeTVM(target) {
+      const N = Number(tvmN);
+      const I = Number(tvmI) / 100; // convert % to fraction
+      const PV = Number(tvmPV);
+      const PMT = Number(tvmPMT);
+      const FV = Number(tvmFV);
+      const type = tvmBgn ? 1 : 0; // 1 for BGN, 0 for END
+
+      let result = 0;
+
+      try {
+        if (target === 'PV') {
+          if (I === 0) {
+            result = -(PMT * N + FV);
+          } else {
+            const df = Math.pow(1 + I, -N);
+            const annFactor = (1 - df) / I * (1 + I * type);
+            result = -(PMT * annFactor + FV * df);
+          }
+        } 
+        else if (target === 'FV') {
+          if (I === 0) {
+            result = -(PV + PMT * N);
+          } else {
+            const comp = Math.pow(1 + I, N);
+            const annFactor = (comp - 1) / I * (1 + I * type);
+            result = -(PV * comp + PMT * annFactor);
+          }
+        } 
+        else if (target === 'PMT') {
+          if (I === 0) {
+            if (N === 0) throw new Error("Divide by Zero");
+            result = -(PV + FV) / N;
+          } else {
+            const df = Math.pow(1 + I, -N);
+            const annFactor = (1 - df) / I * (1 + I * type);
+            if (annFactor === 0) throw new Error("Divide by Zero");
+            result = -(PV + FV * df) / annFactor;
+          }
+        } 
+        else if (target === 'N') {
+          if (I === 0) {
+            if (PMT === 0) throw new Error("Math Error");
+            result = -(PV + FV) / PMT;
+          } else {
+            const adjPmt = PMT * (1 + I * type) / I;
+            const numerator = adjPmt - PV;
+            const denominator = adjPmt + FV;
+            if (numerator / denominator <= 0) throw new Error("Math Error"); // Logarithm of negative or zero
+            result = Math.log(denominator / numerator) / Math.log(1 + I);
+          }
+        } 
+        else if (target === 'IY') {
+          result = solveTVMRate(N, PV, PMT, FV, type);
+          if (isNaN(result)) throw new Error("No Converge");
+          result = result * 100; // convert back to percentage rate
+        }
+      } catch (e) {
+        return NaN;
+      }
+
+      return result;
+    }
+
+    // Solve interest rate utilizing standard Secant Method and Bisection fallback
+    function solveTVMRate(N, PV, PMT, FV, type) {
+      function evaluateCashflow(i) {
+        if (Math.abs(i) < 1e-10) {
+          return PV + PMT * N + FV;
+        }
+        const df = Math.pow(1 + i, -N);
+        const annFactor = (1 - df) / i * (1 + i * type);
+        return PV + PMT * annFactor + FV * df;
+      }
+
+      // Initial guess ranges
+      let i0 = 0.10; // 10%
+      let i1 = 0.05; // 5%
+      let f0 = evaluateCashflow(i0);
+      let f1 = evaluateCashflow(i1);
+
+      // 1. Secant Method
+      for (let step = 0; step < 80; step++) {
+        if (Math.abs(f1 - f0) < 1e-14) break;
+        const iNext = i1 - f1 * (i1 - i0) / (f1 - f0);
+        
+        if (iNext <= -1) {
+          // Adjust guess range
+          i0 = i1; f0 = f1;
+          i1 = -0.95; f1 = evaluateCashflow(i1);
+          continue;
+        }
+        
+        i0 = i1; f0 = f1;
+        i1 = iNext; f1 = evaluateCashflow(i1);
+        
+        if (Math.abs(i1 - i0) < 1e-10) {
+          return i1;
+        }
+      }
+
+      // 2. Bisection Fallback for robust edge cases
+      let low = -0.999;
+      let high = 15.0; // 1500%
+      let flow = evaluateCashflow(low);
+      let fhigh = evaluateCashflow(high);
+
+      if (flow * fhigh < 0) {
+        for (let step = 0; step < 100; step++) {
+          const mid = (low + high) / 2;
+          const fmid = evaluateCashflow(mid);
+          if (Math.abs(high - low) < 1e-10) {
+            return mid;
+          }
+          if (flow * fmid < 0) {
+            high = mid;
+            fhigh = fmid;
+          } else {
+            low = mid;
+            flow = fmid;
+          }
+        }
+      }
+      return NaN;
+    }
+
+    /* ----------------------------------------------------
+       Keypad Triggers & Calculations Handler
+       ---------------------------------------------------- */
+    function handleKeyPress(key) {
+      const historyLine = document.getElementById('lcd-history');
+      
+      // Standard number entries
+      if (!isNaN(key) || key === '.') {
+        if (resetDisplayOnNextKey) {
+          currentInput = "";
+          resetDisplayOnNextKey = false;
+        }
+        
+        // Prevent multiple decimals
+        if (key === '.' && currentInput.includes('.')) return;
+        
+        currentInput += key;
+        
+        // Format display
+        if (currentInput === '.') {
+          displayValue = "0.";
+        } else if (currentInput.endsWith('.')) {
+          displayValue = Number(currentInput.slice(0, -1)).toLocaleString() + ".";
+        } else if (currentInput.includes('.')) {
+          const parts = currentInput.split('.');
+          displayValue = Number(parts[0]).toLocaleString() + "." + parts[1];
+        } else {
+          displayValue = Number(currentInput).toLocaleString();
+        }
+        
+        updateLcdDisplay();
+        return;
+      }
+
+      // Operator triggers
+      if (['+', '-', '*', '/'].includes(key)) {
+        const val = Number(currentInput || displayValue.replace(/,/g, ''));
+        
+        if (pendingOperator && !resetDisplayOnNextKey) {
+          // Chain calculations
+          const result = executeArithmetic(storedOperand, val, pendingOperator);
+          storedOperand = result;
+          displayValue = formatNumber(result);
+          appendToTape(`${formatNumber(val)} ${getSymbolForOperator(pendingOperator)}`, formatNumber(result));
+        } else {
+          storedOperand = val;
+        }
+        
+        pendingOperator = key;
+        resetDisplayOnNextKey = true;
+        
+        historyLine.textContent = `${formatNumber(storedOperand)} ${getSymbolForOperator(key)}`;
+        updateLcdDisplay();
+        return;
+      }
+
+      // Equals Trigger
+      if (key === '=') {
+        if (!pendingOperator) return;
+        
+        const val = Number(currentInput || displayValue.replace(/,/g, ''));
+        const result = executeArithmetic(storedOperand, val, pendingOperator);
+        
+        historyLine.textContent = `${formatNumber(storedOperand)} ${getSymbolForOperator(pendingOperator)} ${formatNumber(val)}`;
+        displayValue = formatNumber(result);
+        
+        appendToTape(`${formatNumber(storedOperand)} ${getSymbolForOperator(pendingOperator)} ${formatNumber(val)}`, formatNumber(result), true);
+        
+        // Reset states
+        storedOperand = null;
+        pendingOperator = null;
+        currentInput = "";
+        resetDisplayOnNextKey = true;
+        updateLcdDisplay();
+        return;
+      }
+
+      // Sign toggle +/-
+      if (key === '+/-') {
+        if (currentInput) {
+          if (currentInput.startsWith('-')) {
+            currentInput = currentInput.substring(1);
+          } else {
+            currentInput = '-' + currentInput;
+          }
+          displayValue = currentInput.startsWith('-') ? "-" + displayValue.replace('-', '') : displayValue.replace('-', '');
+        } else {
+          let num = Number(displayValue.replace(/,/g, ''));
+          num = -num;
+          displayValue = formatNumber(num);
+        }
+        updateLcdDisplay();
+        return;
+      }
+
+      // DEL backspace
+      if (key === 'DEL') {
+        if (currentInput) {
+          currentInput = currentInput.slice(0, -1);
+          if (currentInput === "" || currentInput === "-") {
+            currentInput = "";
+            displayValue = "0.00";
+          } else {
+            displayValue = currentInput;
+          }
+          updateLcdDisplay();
+        }
+        return;
+      }
+
+      // Clear (C / CE)
+      if (key === 'C') {
+        if (secondFunctionMode) {
+          // 2nd + C -> Clear all TVM
+          tvmN = 0; tvmI = 0; tvmPV = 0; tvmPMT = 0; tvmFV = 0;
+          historyLine.textContent = "TVM MEMORY CLEARED";
+          appendToTape("CLR TVM REGISTERS", "0.00");
+          secondFunctionMode = false;
+        } else if (currentInput !== "") {
+          // Clear current typed value
+          currentInput = "";
+          displayValue = "0.00";
+          historyLine.textContent = "ENTRY CLEARED";
+        } else {
+          // Clear operational values
+          storedOperand = null;
+          pendingOperator = null;
+          displayValue = "0.00";
+          historyLine.textContent = "RESET SYSTEM";
+        }
+        updateLcdDisplay();
+        return;
+      }
+
+      // Compute TVM Resolver (CPT)
+      if (key === 'CPT') {
+        cptMode = true;
+        historyLine.textContent = "COMPUTE MODE ACTIVATED";
+        updateLcdDisplay();
+        return;
+      }
+
+      // Second functions trigger (2nd)
+      if (key === '2nd') {
+        secondFunctionMode = !secondFunctionMode;
+        historyLine.textContent = secondFunctionMode ? "2nd FUNCTIONS ENABLED" : "READY";
+        updateLcdDisplay();
+        return;
+      }
+
+      // BGN / END toggling
+      if (key === 'BGN') {
+        tvmBgn = !tvmBgn;
+        historyLine.textContent = tvmBgn ? "PAYMENT IN BEGINNING" : "PAYMENT AT END";
+        appendToTape("PAYMENT MODE SET", tvmBgn ? "BEGIN" : "END");
+        updateLcdDisplay();
+        return;
+      }
+
+      // Store Register (STO)
+      if (key === 'STO') {
+        stoMode = true;
+        rclMode = false;
+        historyLine.textContent = "STORE REGISTER MODE";
+        updateLcdDisplay();
+        return;
+      }
+
+      // Recall Register (RCL)
+      if (key === 'RCL') {
+        rclMode = true;
+        stoMode = false;
+        historyLine.textContent = "RECALL REGISTER MODE";
+        updateLcdDisplay();
+        return;
+      }
+
+      // Percentages
+      if (key === '%') {
+        let num = Number(displayValue.replace(/,/g, ''));
+        num = num / 100;
+        displayValue = formatNumber(num);
+        currentInput = num.toString();
+        historyLine.textContent = "PERCENTAGE CONVERSION";
+        updateLcdDisplay();
+        return;
+      }
+
+      // Square root
+      if (key === 'SQRT') {
+        let num = Number(displayValue.replace(/,/g, ''));
+        if (num < 0) {
+          displayValue = "Error";
+          historyLine.textContent = "INVALID ENTRY";
+        } else {
+          const res = Math.sqrt(num);
+          displayValue = formatNumber(res);
+          currentInput = res.toString();
+          historyLine.textContent = `√(${formatNumber(num)})`;
+          appendToTape(`√(${formatNumber(num)})`, formatNumber(res), true);
+        }
+        updateLcdDisplay();
+        return;
+      }
+
+      // Reciprocal inverse 1/x
+      if (key === '1/X') {
+        let num = Number(displayValue.replace(/,/g, ''));
+        if (num === 0) {
+          displayValue = "Error";
+          historyLine.textContent = "DIVIDE BY ZERO";
+        } else {
+          const res = 1 / num;
+          displayValue = formatNumber(res);
+          currentInput = res.toString();
+          historyLine.textContent = `1/(${formatNumber(num)})`;
+          appendToTape(`1/(${formatNumber(num)})`, formatNumber(res), true);
+        }
+        updateLcdDisplay();
+        return;
+      }
+
+      /* ----------------------------------------------------
+         TVM Keys Operations (N, I/Y, PV, PMT, FV)
+         ---------------------------------------------------- */
+      if (['N', 'I/Y', 'PV', 'PMT', 'FV'].includes(key)) {
+        const val = Number(displayValue.replace(/,/g, ''));
+        const regKey = key === 'I/Y' ? 'IY' : key;
+        
+        // Mode 1: COMPUTE variable (CPT + TVM Key)
+        if (cptMode) {
+          cptMode = false;
+          runProcessingAnimation(key, () => {
+            const calculatedResult = computeTVM(regKey);
+            if (isNaN(calculatedResult)) {
+              displayValue = "Error";
+              historyLine.textContent = `MATH ERROR ON CPT ${key}`;
+              appendToTape(`CPT ${key}`, "ERROR VALUE", true);
+            } else {
+              // Update local state
+              setTVMVariable(regKey, calculatedResult);
+              displayValue = formatNumber(calculatedResult);
+              historyLine.textContent = `${key} CALCULATED`;
+              appendToTape(`CPT ${key}`, formatNumber(calculatedResult), true);
+              flashRegisterRow(regKey);
+            }
+            updateLcdDisplay();
+          });
+          return;
+        }
+
+        // Mode 2: RECALL variable (RCL + TVM Key)
+        if (rclMode) {
+          rclMode = false;
+          const recalledVal = getTVMVariable(regKey);
+          displayValue = formatNumber(recalledVal);
+          currentInput = recalledVal.toString();
+          historyLine.textContent = `RECALL ${key}`;
+          appendToTape(`RCL ${key}`, formatNumber(recalledVal));
+          updateLcdDisplay();
+          return;
+        }
+
+        // Mode 3: STORE variable (STO + TVM Key or direct push)
+        // Storing currently displayed numerical input
+        stoMode = false;
+        setTVMVariable(regKey, val);
+        historyLine.textContent = `${key} STORED = ${formatNumber(val)}`;
+        appendToTape(`${key} REG.STORED`, formatNumber(val));
+        
+        // Reset entry state
+        currentInput = "";
+        resetDisplayOnNextKey = true;
+        flashRegisterRow(regKey);
+        updateLcdDisplay();
+        return;
+      }
+    }
+
+    // LCD processing simulation animation
+    function runProcessingAnimation(targetLabel, onComplete) {
+      const historyLine = document.getElementById('lcd-history');
+      const mainDisplay = document.getElementById('lcd-main-display');
+      
+      historyLine.textContent = `CPT ${targetLabel}...`;
+      mainDisplay.classList.add('solving-glow');
+      
+      let steps = 0;
+      const interval = setInterval(() => {
+        steps++;
+        if (steps === 1) mainDisplay.textContent = "—";
+        else if (steps === 2) mainDisplay.textContent = "——";
+        else if (steps === 3) mainDisplay.textContent = "———";
+        else {
+          clearInterval(interval);
+          mainDisplay.classList.remove('solving-glow');
+          onComplete();
+        }
+      }, 160);
+    }
+
+    // Sync state storage values helper
+    function setTVMVariable(reg, value) {
+      if (reg === 'N') tvmN = value;
+      else if (reg === 'IY') tvmI = value;
+      else if (reg === 'PV') tvmPV = value;
+      else if (reg === 'PMT') tvmPMT = value;
+      else if (reg === 'FV') tvmFV = value;
+    }
+
+    function getTVMVariable(reg) {
+      if (reg === 'N') return tvmN;
+      else if (reg === 'IY') return tvmI;
+      else if (reg === 'PV') return tvmPV;
+      else if (reg === 'PMT') return tvmPMT;
+      else if (reg === 'FV') return tvmFV;
+      return 0;
+    }
+
+    function executeArithmetic(op1, op2, operator) {
+      switch (operator) {
+        case '+': return op1 + op2;
+        case '-': return op1 - op2;
+        case '*': return op1 * op2;
+        case '/': return op2 !== 0 ? op1 / op2 : NaN;
+        default: return op2;
+      }
+    }
+
+    function getSymbolForOperator(op) {
+      switch (op) {
+        case '/': return '÷';
+        case '*': return '×';
+        case '-': return '−';
+        case '+': return '+';
+        default: return op;
+      }
+    }
+
+    /* ----------------------------------------------------
+       Dashboard UI Interactivity & Sync functions
+       ---------------------------------------------------- */
+    // Handle tab toggle selections
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    // Solve directly from worksheet dashboard inputs
+    function solveRegisterFromDashboard(reg) {
+      // Collect current input values from dashboard and update local variables
+      tvmN = Number(document.getElementById('reg-val-n').value);
+      tvmI = Number(document.getElementById('reg-val-i').value);
+      tvmPV = Number(document.getElementById('reg-val-pv').value);
+      tvmPMT = Number(document.getElementById('reg-val-pmt').value);
+      tvmFV = Number(document.getElementById('reg-val-fv').value);
+
+      runProcessingAnimation(reg === 'IY' ? 'I/Y' : reg, () => {
+        const calculatedValue = computeTVM(reg);
+        
+        if (isNaN(calculatedValue)) {
+          displayValue = "Error";
+          document.getElementById('lcd-history').textContent = `MATH ERROR ON CPT ${reg}`;
+          appendToTape(`CPT ${reg} (DASH)`, "ERROR", true);
+        } else {
+          setTVMVariable(reg, calculatedValue);
+          displayValue = formatNumber(calculatedValue);
+          document.getElementById('lcd-history').textContent = `${reg === 'IY' ? 'I/Y' : reg} CALCULATED`;
+          appendToTape(`CPT ${reg} (DASH)`, formatNumber(calculatedValue), true);
+          flashRegisterRow(reg);
+        }
+        updateLcdDisplay();
+      });
+    }
+
+    // Direct value sync when editing dashboard inputs
+    document.querySelectorAll('.reg-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const val = Number(e.target.value);
+        if (e.target.id === 'reg-val-n') tvmN = val;
+        else if (e.target.id === 'reg-val-i') tvmI = val;
+        else if (e.target.id === 'reg-val-pv') tvmPV = val;
+        else if (e.target.id === 'reg-val-pmt') tvmPMT = val;
+        else if (e.target.id === 'reg-val-fv') tvmFV = val;
+        
+        appendToTape("INPUT MODIFIED", formatNumber(val));
+        updateLcdDisplay();
+      });
+    });
+
+    // Timing selector updates
+    function setPaymentTiming(bgnState) {
+      tvmBgn = bgnState;
+      document.getElementById('lcd-history').textContent = tvmBgn ? "PAYMENT IN BEGINNING" : "PAYMENT AT END";
+      appendToTape("TIMING CHANGED", tvmBgn ? "BEGIN (BGN)" : "END (END)");
+      updateLcdDisplay();
+    }
+
+    function clearAuditorTape() {
+      const tape = document.getElementById('tape-content');
+      tape.innerHTML = `
+        <div class="tape-item font-mono text-center">*** REGISTRO LIMPIO ***</div>
+        <div class="tape-item font-mono text-center">-------------------------</div>
+      `;
+    }
+
+    function resetCalculatorMemory() {
+      tvmN = 0; tvmI = 0; tvmPV = 0; tvmPMT = 0; tvmFV = 0; tvmBgn = false;
+      displayValue = "0.00";
+      currentInput = "";
+      storedOperand = null;
+      pendingOperator = null;
+      document.getElementById('lcd-history').textContent = "SYSTEM CLEARED";
+      appendToTape("SYSTEM FULL RESET", "0.00");
+      updateLcdDisplay();
+    }
+
+    // Load preconfigured scenario templates
+    function loadSelectedScenario(scen) {
+      const historyLine = document.getElementById('lcd-history');
+      
+      if (scen === 'villa') {
+        tvmN = 360;       // 30 years * 12
+        tvmI = 6.6 / 12;  // Monthly rate for 6.6% annual interest
+        tvmPV = -1000000; // $1,000,000 financed outflow
+        tvmFV = 0;        // Fully amortized loan
+        tvmBgn = false;   // Ordinary annuity
+        
+        historyLine.textContent = "SCENARIO VILLA LOADED";
+        appendToTape("LOAD SCENARIO", "VILLA SIERRA");
+        appendToTape("PV (FINANCED)", formatNumber(tvmPV));
+        appendToTape("N (TERM)", "360");
+        appendToTape("I/Y (INTEREST/M)", "0.55");
+        
+        // Solve for payment PMT automatically
+        solveRegisterFromDashboard('PMT');
+      } 
+      else if (scen === 'compound') {
+        tvmN = 15;
+        tvmI = 5.75;
+        tvmPV = -500000;
+        tvmPMT = 0;
+        tvmBgn = false;
+        
+        historyLine.textContent = "SCENARIO FIDELITY LOADED";
+        appendToTape("LOAD SCENARIO", "TRUST compounding");
+        appendToTape("PV (INITIAL)", formatNumber(tvmPV));
+        appendToTape("N (YEARS)", "15");
+        appendToTape("I/Y (RATE)", "5.75");
+        
+        // Solve for future value FV automatically
+        solveRegisterFromDashboard('FV');
+      } 
+      else if (scen === 'retirement') {
+        tvmN = 300;       // 25 years * 12
+        tvmI = 7.2 / 12;  // Monthly rate for 7.2% annual interest
+        tvmPV = -150000;  // Initial nest egg
+        tvmFV = 3000000;  // Target savings
+        tvmBgn = false;   // Standard monthly payments
+        
+        historyLine.textContent = "SCENARIO RETIREMENT LOADED";
+        appendToTape("LOAD SCENARIO", "RETIREMENT PLAN");
+        appendToTape("PV (STARTING)", formatNumber(tvmPV));
+        appendToTape("FV (TARGET)", formatNumber(tvmFV));
+        appendToTape("N (PERIODS)", "300");
+        appendToTape("I/Y (RATE/M)", "0.60");
+        
+        // Solve for PMT automatically
+        solveRegisterFromDashboard('PMT');
+      } 
+      else if (scen === 'venture') {
+        tvmN = 7;
+        tvmPV = -400000;
+        tvmPMT = 0;
+        tvmFV = 2500000;
+        tvmBgn = false;
+        
+        historyLine.textContent = "SCENARIO VENTURE LOADED";
+        appendToTape("LOAD SCENARIO", "VC SEED FLUX");
+        appendToTape("PV (OUTFLOW)", formatNumber(tvmPV));
+        appendToTape("FV (RETURNS)", formatNumber(tvmFV));
+        appendToTape("N (YEARS)", "7");
+        appendToTape("PMT (INTERIM)", "0.00");
+        
+        // Solve for interest rate I/Y automatically
+        solveRegisterFromDashboard('IY');
+      }
+
+      // Shift tab view to Worksheet to show values
+      document.querySelector('.tab-btn[data-tab="worksheet"]').click();
+      
+      // Auto-toggle view on mobile layout to see dashboard
+      if (window.innerWidth <= 900) {
+        toggleMobileView(true);
+      }
+    }
+
+    /* ----------------------------------------------------
+       Mobile Layout & View Controls
+       ---------------------------------------------------- */
+    function toggleMobileView(showDash) {
+      const workspace = document.getElementById('app-workspace');
+      const calcBtn = document.getElementById('m-btn-calc');
+      const dashBtn = document.getElementById('m-btn-dash');
+      
+      if (showDash) {
+        workspace.classList.add('show-dashboard');
+        dashBtn.classList.add('active');
+        calcBtn.classList.remove('active');
+      } else {
+        workspace.classList.remove('show-dashboard');
+        calcBtn.classList.add('active');
+        dashBtn.classList.remove('active');
+      }
+    }
+
+    /* ----------------------------------------------------
+       Physical keyboard mapping & Listeners
+       ---------------------------------------------------- */
+    // Add button press visual feedback
+    function triggerButtonActiveState(btnKey) {
+      const buttons = document.querySelectorAll(`.calc-btn[data-key="${btnKey}"]`);
+      buttons.forEach(btn => {
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 120);
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      // Avoid capturing shortcuts while typing in inputs
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      const key = e.key;
+
+      if (!isNaN(key)) {
+        triggerButtonActiveState(key);
+        handleKeyPress(key);
+      } 
+      else if (key === '.') {
+        triggerButtonActiveState('.');
+        handleKeyPress('.');
+      } 
+      else if (key === '+' || key === '-' || key === '*' || key === '/') {
+        e.preventDefault();
+        triggerButtonActiveState(key);
+        handleKeyPress(key);
+      } 
+      else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        triggerButtonActiveState('=');
+        handleKeyPress('=');
+      } 
+      else if (key === 'Backspace') {
+        triggerButtonActiveState('DEL');
+        handleKeyPress('DEL');
+      } 
+      else if (key === 'Escape') {
+        triggerButtonActiveState('C');
+        handleKeyPress('C');
+      } 
+      // Financial parameters shortcut mappings
+      else if (key.toLowerCase() === 'n') {
+        triggerButtonActiveState('N');
+        handleKeyPress('N');
+      } 
+      else if (key.toLowerCase() === 'i') {
+        triggerButtonActiveState('I/Y');
+        handleKeyPress('I/Y');
+      } 
+      else if (key.toLowerCase() === 'p') {
+        triggerButtonActiveState('PV');
+        handleKeyPress('PV');
+      } 
+      else if (key.toLowerCase() === 'm') {
+        triggerButtonActiveState('PMT');
+        handleKeyPress('PMT');
+      } 
+      else if (key.toLowerCase() === 'f') {
+        triggerButtonActiveState('FV');
+        handleKeyPress('FV');
+      } 
+      else if (key.toLowerCase() === 'c') {
+        triggerButtonActiveState('CPT');
+        handleKeyPress('CPT');
+      } 
+      else if (key.toLowerCase() === 's') {
+        triggerButtonActiveState('2nd');
+        handleKeyPress('2nd');
+      }
+    });
+
+    // Map tap events on physical keypad buttons
+    document.querySelectorAll('.calc-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        if (key) {
+          handleKeyPress(key);
+        }
+      });
+    });
+
+    // Initialize display states on start
+    updateLcdDisplay();
+
+  </script>
+</body>
+</html>
