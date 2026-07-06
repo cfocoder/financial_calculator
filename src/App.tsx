@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { buildAmortizationSchedule, summarizeAmortization } from './lib/finance/amortization';
 import { formatMoney, solveTVM, type PaymentTiming } from './lib/finance/tvm';
 
 type Target = 'PV' | 'FV' | 'PMT';
@@ -21,12 +22,43 @@ function parseOptional(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseInput(value: string, fallback: number): number {
+  if (value.trim() === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function App() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [target, setTarget] = useState<Target>('PMT');
   const [result, setResult] = useState<string>('Ready');
   const [display, setDisplay] = useState<string>('25000');
   const [error, setError] = useState<string>('');
+
+  const amortization = useMemo(() => {
+    try {
+      const payment = parseInput(form.pmt, 483.32);
+      const schedule = buildAmortizationSchedule({
+        principal: Math.abs(parseInput(form.pv, 25000)),
+        ratePercent: parseInput(form.ratePercent, 0.5),
+        periods: Math.max(1, Math.trunc(parseInput(form.n, 60))),
+        payment: Math.abs(payment),
+        startPeriod: 1,
+        endPeriod: Math.min(12, Math.max(1, Math.trunc(parseInput(form.n, 60)))),
+      });
+      return {
+        schedule,
+        summary: summarizeAmortization(schedule.allRows),
+        error: '',
+      };
+    } catch (problem) {
+      return {
+        schedule: null,
+        summary: null,
+        error: problem instanceof Error ? problem.message : 'Unable to build amortization schedule',
+      };
+    }
+  }, [form]);
 
   const solvedPreview = useMemo(() => {
     try {
@@ -159,6 +191,67 @@ function App() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="amortization-panel" aria-label="Amortization worksheet">
+        <div className="worksheet-header">
+          <div>
+            <p className="eyebrow">Loan analysis</p>
+            <h2>Amortization Worksheet</h2>
+          </div>
+          {amortization.summary ? (
+            <span>Interest: {formatMoney(amortization.summary.totalInterest)}</span>
+          ) : (
+            <span>{amortization.error}</span>
+          )}
+        </div>
+
+        {amortization.summary && amortization.schedule ? (
+          <>
+            <div className="summary-grid">
+              <div>
+                <span>Total paid</span>
+                <strong>{formatMoney(amortization.summary.totalPayments)}</strong>
+              </div>
+              <div>
+                <span>Total principal</span>
+                <strong>{formatMoney(amortization.summary.totalPrincipal)}</strong>
+              </div>
+              <div>
+                <span>Ending balance</span>
+                <strong>{formatMoney(amortization.summary.endingBalance)}</strong>
+              </div>
+            </div>
+
+            <div className="table-wrap">
+              <table>
+                <caption>First {amortization.schedule.rows.length} periods</caption>
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Payment</th>
+                    <th>Interest</th>
+                    <th>Principal</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {amortization.schedule.rows.map((row) => (
+                    <tr key={row.period}>
+                      <td>{row.period}</td>
+                      <td>{formatMoney(row.payment)}</td>
+                      <td>{formatMoney(row.interest)}</td>
+                      <td>{formatMoney(row.principal)}</td>
+                      <td>{formatMoney(row.balance)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <p className="panel-error">{amortization.error}</p>
+        )}
       </section>
 
       <section className="notes-panel" aria-label="Formula assumptions">
