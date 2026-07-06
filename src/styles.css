@@ -309,6 +309,65 @@ td {
   margin-bottom: 0;
 }
 
+.cashflow-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 18, 0.78);
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
+.cashflow-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.cashflow-form textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(2, 6, 23, 0.78);
+  color: #f8fafc;
+  border-radius: 14px;
+  padding: 13px 14px;
+  outline: none;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.cashflow-form textarea:focus {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+.cashflow-results {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cashflow-results div {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.cashflow-results span {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cashflow-results strong {
+  color: #fbbf24;
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+}
+
 .notes-panel ul {
   margin-bottom: 0;
   color: #cbd5e1;
