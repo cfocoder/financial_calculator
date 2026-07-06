@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { buildAmortizationSchedule, summarizeAmortization } from './lib/finance/amortization';
 import { formatMoney, solveTVM, type PaymentTiming } from './lib/finance/tvm';
+import { computeNPV, computeIRR, parseCashflows } from './lib/finance/cashflow';
 
 type Target = 'PV' | 'FV' | 'PMT';
 type Field = 'n' | 'ratePercent' | 'pv' | 'pmt' | 'fv';
@@ -34,6 +35,11 @@ function App() {
   const [result, setResult] = useState<string>('Ready');
   const [display, setDisplay] = useState<string>('25000');
   const [error, setError] = useState<string>('');
+  const [cfInput, setCfInput] = useState<string>('-1000, 300, 400, 500, 600');
+  const [cfRate, setCfRate] = useState<string>('10');
+  const [cfNpv, setCfNpv] = useState<string>('');
+  const [cfIrr, setCfIrr] = useState<string>('');
+  const [cfError, setCfError] = useState<string>('');
 
   const amortization = useMemo(() => {
     try {
@@ -106,6 +112,29 @@ function App() {
       const message = problem instanceof Error ? problem.message : 'Unable to solve';
       setError(message);
       setResult('Check inputs');
+    }
+  }
+
+  function computeCashflows() {
+    try {
+      const cashflows = parseCashflows(cfInput);
+      const rate = parseInput(cfRate, 10);
+      const npv = computeNPV(rate, cashflows);
+      let irrMsg: string;
+      try {
+        const irr = computeIRR(cashflows);
+        irrMsg = `${irr.toFixed(4)}%`;
+      } catch {
+        irrMsg = 'N/A';
+      }
+      setCfNpv(formatMoney(npv));
+      setCfIrr(irrMsg);
+      setCfError('');
+    } catch (problem) {
+      const message = problem instanceof Error ? problem.message : 'Unable to compute';
+      setCfError(message);
+      setCfNpv('');
+      setCfIrr('');
     }
   }
 
@@ -254,12 +283,61 @@ function App() {
         )}
       </section>
 
+      <section className="cashflow-panel" aria-label="Cashflow worksheet">
+        <div className="worksheet-header">
+          <div>
+            <p className="eyebrow">Investment analysis</p>
+            <h2>Cashflow Worksheet</h2>
+          </div>
+          <span>{cfNpv ? `NPV: ${cfNpv}` : cfError ? 'Error' : 'Enter cash flows'}</span>
+        </div>
+
+        <form className="cashflow-form" onSubmit={(event) => { event.preventDefault(); computeCashflows(); }}>
+          <label>
+            <span>Cash flows (comma, space, or newline separated)</span>
+            <textarea
+              value={cfInput}
+              onChange={(event) => { setCfInput(event.target.value); setCfNpv(''); setCfIrr(''); setCfError(''); }}
+              rows={4}
+              placeholder="-1000, 300, 400, 500"
+            />
+          </label>
+          <label>
+            <span>Discount rate %</span>
+            <input
+              value={cfRate}
+              onChange={(event) => { setCfRate(event.target.value); setCfNpv(''); setCfIrr(''); setCfError(''); }}
+              inputMode="decimal"
+            />
+          </label>
+
+          {cfError && <p className="panel-error">{cfError}</p>}
+
+          {cfNpv && (
+            <div className="cashflow-results">
+              <div>
+                <span>NPV</span>
+                <strong>{cfNpv}</strong>
+              </div>
+              <div>
+                <span>IRR</span>
+                <strong>{cfIrr}</strong>
+              </div>
+            </div>
+          )}
+
+          <button className="solve-button" type="submit">Compute</button>
+        </form>
+      </section>
+
       <section className="notes-panel" aria-label="Formula assumptions">
         <h2>Assumptions</h2>
         <ul>
           <li>Rates are entered as percentages per period for v1.</li>
           <li>Cash received is positive; cash paid is negative.</li>
           <li>Classic calculator feel, original branding and layout.</li>
+          <li>NPV: first cash flow (t=0) is the initial investment, undiscounted.</li>
+          <li>IRR uses Newton-Raphson; may not converge in all edge cases.</li>
         </ul>
       </section>
     </main>
