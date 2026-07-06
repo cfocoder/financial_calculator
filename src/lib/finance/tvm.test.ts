@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { solveFV, solvePMT, solvePV } from './tvm';
+import { solveFV, solvePMT, solvePV, solveN, solveRate, solveTVM } from './tvm';
 
 describe('TVM finance engine', () => {
   it('solves future value with zero payments', () => {
@@ -29,4 +29,29 @@ describe('TVM finance engine', () => {
     const result = solvePMT({ n: 10, ratePercent: 0, pv: 1000, fv: 0 });
     expect(result.value).toBe(-100);
   });
+
+  it('solves number of periods for a single future value target', () => {
+    const exactFutureValue = 1000 * Math.pow(1.05, 10);
+    const result = solveN({ ratePercent: 5, pv: -1000, pmt: 0, fv: exactFutureValue });
+    expect(result.solvedFor).toBe('N');
+    expect(result.value).toBeCloseTo(10, 4);
+  });
+
+  it('solves periodic interest rate as a percent', () => {
+    const result = solveRate({ n: 10, pv: -1000, pmt: 0, fv: 1628.89 });
+    expect(result.solvedFor).toBe('I/Y');
+    expect(result.value).toBeCloseTo(5, 4);
+  });
+
+  it('routes N and I/Y through the generic solver', () => {
+    const exactFutureValue = 1000 * Math.pow(1.05, 10);
+    expect(solveTVM({ ratePercent: 5, pv: -1000, pmt: 0, fv: exactFutureValue }, 'N').value).toBeCloseTo(10, 4);
+    expect(solveTVM({ n: 10, pv: -1000, pmt: 0, fv: 1628.89 }, 'I/Y').value).toBeCloseTo(5, 4);
+  });
+
+  it('rejects rates at or below -100 percent', () => {
+    expect(() => solveFV({ n: 10, ratePercent: -100, pv: -1000 })).toThrow('I/Y must be greater than -100%');
+    expect(() => solvePMT({ n: 10, ratePercent: -101, pv: 1000, fv: 0 })).toThrow('I/Y must be greater than -100%');
+  });
+
 });
