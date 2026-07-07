@@ -36,16 +36,16 @@ button {
   margin: 0 auto;
   padding: 48px 0;
   display: grid;
-  gap: 28px;
+  gap: 0;
 }
 
-.hero-panel,
-.notes-panel {
+.hero-panel {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(8, 12, 18, 0.72);
   border-radius: 28px;
   padding: 28px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+  margin-bottom: 24px;
 }
 
 .eyebrow {
@@ -77,6 +77,73 @@ h1 {
   margin-bottom: 0;
 }
 
+/* ── Tabs ── */
+.tabs-bar {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-radius: 12px 12px 0 0;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tab-btn:hover {
+  color: #f4f1e8;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.tab-btn.active {
+  color: #fbbf24;
+  background-color: rgba(251, 191, 36, 0.08);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: #fbbf24;
+  border-radius: 2px 2px 0 0;
+  box-shadow: 0 -2px 8px rgba(251, 191, 36, 0.35);
+}
+
+/* ── Tab Content ── */
+.tab-content-wrapper {
+  min-height: 400px;
+}
+
+.tab-panel {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Calculator ── */
 .calculator-card {
   border-radius: 38px;
   padding: 10px;
@@ -224,6 +291,7 @@ button:focus-visible {
   grid-column: span 2;
 }
 
+/* ── Amortization ── */
 .amortization-panel {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(8, 12, 18, 0.78);
@@ -309,6 +377,7 @@ td {
   margin-bottom: 0;
 }
 
+/* ── Cashflow ── */
 .cashflow-panel {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(8, 12, 18, 0.78);
@@ -368,12 +437,22 @@ td {
   font-size: clamp(1.15rem, 2vw, 1.6rem);
 }
 
+/* ── Notes ── */
+.notes-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 18, 0.72);
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
 .notes-panel ul {
   margin-bottom: 0;
   color: #cbd5e1;
   line-height: 1.8;
 }
 
+/* ── Responsive ── */
 @media (max-width: 860px) {
   .workbench {
     grid-template-columns: 1fr;
@@ -381,5 +460,14 @@ td {
 
   .keypad {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .tabs-bar {
+    gap: 4px;
+  }
+
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 0.85rem;
   }
 }
